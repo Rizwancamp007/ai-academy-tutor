@@ -1,23 +1,29 @@
-import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
+import { createApp } from "./app.js";
+import { User } from "./models/User.js";
+import { createMemoryStore, createMongooseStore } from "./store/users.js";
 
 dotenv.config();
 
-const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" }));
-app.use(express.json());
+async function main() {
+  let store = createMemoryStore();
+  if (process.env.MONGODB_URI) {
+    await mongoose.connect(process.env.MONGODB_URI);
+    store = createMongooseStore(User);
+    console.log("Connected to MongoDB");
+  } else {
+    console.log("No MONGODB_URI set, using in-memory users (data resets on restart)");
+  }
+  const app = createApp({ store });
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
 
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
-});
-
-app.get("/", (req, res) => {
-  res.json({ message: "AI Academy Tutor API" });
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
 });

@@ -1,0 +1,22 @@
+import cors from "cors";
+import express from "express";
+import { createAuthRouter } from "./routes/auth.js";
+import { createMemoryStore } from "./store/users.js";
+
+export function createApp({ store = createMemoryStore() } = {}) {
+  const app = express();
+  app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" }));
+  app.use(express.json());
+
+  app.get("/health", (req, res) => {
+    res.json({ status: "ok" });
+  });
+
+  app.get("/", (req, res) => {
+    res.json({ message: "AI Academy Tutor API" });
+  });
+
+  app.use("/api/auth", createAuthRouter(store));
+
+  return app;
+}
