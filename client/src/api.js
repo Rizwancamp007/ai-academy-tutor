@@ -30,3 +30,35 @@ export async function fetchMe(token) {
   if (!res.ok) throw new Error(data.message || "Request failed");
   return data.user;
 }
+
+export async function listDocuments(token) {
+  const res = await fetch(`${API_URL}/api/documents`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || "Request failed");
+  return data.documents;
+}
+
+export async function uploadDocument(token, file) {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_URL}/api/documents`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || "Request failed");
+  return data.document;
+}
+
+export async function deleteDocument(token, id) {
+  const res = await fetch(`${API_URL}/api/documents/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || "Request failed");
+  return data;
+}
