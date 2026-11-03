@@ -1,5 +1,12 @@
-import { useState } from "react";
-import { fetchMe, login, register } from "./api.js";
+import { useCallback, useEffect, useState } from "react";
+import {
+  deleteDocument,
+  fetchMe,
+  listDocuments,
+  login,
+  register,
+  uploadDocument,
+} from "./api.js";
 
 export default function App() {
   const [mode, setMode] = useState("login");
@@ -16,15 +23,38 @@ export default function App() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [documents, setDocuments] = useState([]);
+  const [docsLoading, setDocsLoading] = useState(false);
+  const [docsError, setDocsError] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  const loadDocuments = useCallback(async () => {
+    const token = localStorage.getItem("tutor-token");
+    if (!token) return;
+    setDocsLoading(true);
+    setDocsError("");
+    try {
+      setDocuments(await listDocuments(token));
+    } catch (err) {
+      setDocsError(err.message);
+    } finally {
+      setDocsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user) loadDocuments();
+  }, [user, loadDocuments]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      const data = mode === "login"
-        ? await login(email, password)
-        : await register(name, email, password, role);
+      const data =
+        mode === "login"
+          ? await login(email, password)
+          : await register(name, email, password, role);
       localStorage.setItem("tutor-token", data.token);
       localStorage.setItem("tutor-user", JSON.stringify(data.user));
       setUser(data.user);
@@ -39,6 +69,7 @@ export default function App() {
     localStorage.removeItem("tutor-token");
     localStorage.removeItem("tutor-user");
     setUser(null);
+    setDocuments([]);
     setEmail("");
     setPassword("");
   }
@@ -55,6 +86,34 @@ export default function App() {
     }
   }
 
+  async function handleUpload(e) {
+    e.preventDefault();
+    const file = e.target.elements.file.files[0];
+    if (!file) return;
+    const token = localStorage.getItem("tutor-token");
+    setUploading(true);
+    setDocsError("");
+    try {
+      await uploadDocument(token, file);
+      e.target.reset();
+      await loadDocuments();
+    } catch (err) {
+      setDocsError(err.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleDelete(id) {
+    const token = localStorage.getItem("tutor-token");
+    try {
+      await deleteDocument(token, id);
+      await loadDocuments();
+    } catch (err) {
+      setDocsError(err.message);
+    }
+  }
+
   if (user) {
     return (
       <main>
@@ -65,6 +124,41 @@ export default function App() {
         <button type="button" onClick={handleRefresh}>Refresh session</button>{" "}
         <button type="button" onClick={handleLogout}>Log out</button>
         <p>Ask questions about your academy&apos;s notes, and get answers with citations.</p>
+
+        {user.role === "teacher" && (
+          <section>
+            <h2>Upload notes</h2>
+            <form onSubmit={handleUpload}>
+              <label>
+                PDF or Word file{" "}
+                <input name="file" type="file" accept=".pdf,.docx" required />
+              </label>{" "}
+              <button type="submit" disabled={uploading}>
+                {uploading ? "Uploading..." : "Upload"}
+              </button>
+            </form>
+          </section>
+        )}
+
+        <section>
+          <h2>Documents</h2>
+          {docsLoading && <p>Loading documents...</p>}
+          {docsError && <p role="alert">{docsError}</p>}
+          {!docsLoading && documents.length === 0 && <p>No documents yet.</p>}
+          <ul>
+            {documents.map((doc) => (
+              <li key={doc.id}>
+                {doc.title} — {doc.status}
+                {doc.status === "failed" && " (could not be read, try another file)"}{" "}
+                {user.role === "teacher" && (
+                  <button type="button" onClick={() => handleDelete(doc.id)}>
+                    Delete
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
       </main>
     );
   }
