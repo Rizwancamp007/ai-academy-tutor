@@ -3,6 +3,11 @@
 export function createMemoryChunkStore() {
   const byDocument = new Map();
   return {
+    async listAll() {
+      const all = [];
+      for (const records of byDocument.values()) all.push(...records);
+      return all.sort((a, b) => a.index - b.index);
+    },
     async listForDocument(documentId) {
       return [...(byDocument.get(String(documentId)) || [])].sort((a, b) => a.index - b.index);
     },
@@ -28,6 +33,9 @@ export function createMongooseChunkStore(Chunk) {
     return { ...obj, id: String(obj._id), documentId: String(obj.documentId) };
   };
   return {
+    async listAll() {
+      return (await Chunk.find({}).sort({ documentId: 1, index: 1 })).map(toRecord);
+    },
     async listForDocument(documentId) {
       return (await Chunk.find({ documentId }).sort({ index: 1 })).map(toRecord);
     },

@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { extractText, isSupportedFile, maxUploadBytes } from "../services/extract.js";
+import { processDocument } from "../services/indexing.js";
 import { publicDocument } from "../store/documents.js";
 
 const upload = multer({
@@ -9,7 +10,7 @@ const upload = multer({
   limits: { fileSize: maxUploadBytes() },
 });
 
-export function createDocumentsRouter(docStore) {
+export function createDocumentsRouter(docStore, { chunkStore, indexDocument = processDocument } = {}) {
   const router = express.Router();
 
   // Teachers upload; students only read the library.
@@ -45,6 +46,14 @@ export function createDocumentsRouter(docStore) {
         text,
         uploadedBy: req.user.id,
       });
+      // Indexing runs in the background so the upload reply stays fast.
+      // If it fails, the document stays readable and the next upload of
+      // the same file re-indexes it; nothing here blocks on the model.
+      if (chunkStore && status === "ready") {
+        indexDocument(doc, { chunkStore }).catch((err) => {
+          console.error(`Indexing failed for document ${doc.id}:`, err.message);
+        });
+      }
       return res.status(201).json({ document: publicDocument(doc) });
     },
   );
@@ -74,6 +83,9 @@ export function createDocumentsRouter(docStore) {
       return res.status(403).json({ message: "You can only delete your own uploads" });
     }
     await docStore.remove(req.params.id);
+    if (chunkStore) {
+      await chunkStore.removeForDocument(req.params.id);
+    }
     return res.json({ message: "Document deleted" });
   });
 
