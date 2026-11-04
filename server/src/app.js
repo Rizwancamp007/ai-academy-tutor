@@ -1,11 +1,18 @@
 import cors from "cors";
 import express from "express";
 import { createAuthRouter } from "./routes/auth.js";
+import { createChatRouter } from "./routes/chat.js";
 import { createDocumentsRouter, uploadErrorHandler } from "./routes/documents.js";
+import { createMemoryChunkStore } from "./store/chunks.js";
 import { createMemoryDocumentStore } from "./store/documents.js";
 import { createMemoryStore } from "./store/users.js";
 
-export function createApp({ store = createMemoryStore(), docStore = createMemoryDocumentStore() } = {}) {
+export function createApp({
+  store = createMemoryStore(),
+  docStore = createMemoryDocumentStore(),
+  chunkStore = createMemoryChunkStore(),
+  chat = {},
+} = {}) {
   const app = express();
   app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" }));
   app.use(express.json());
@@ -19,7 +26,11 @@ export function createApp({ store = createMemoryStore(), docStore = createMemory
   });
 
   app.use("/api/auth", createAuthRouter(store));
-  app.use("/api/documents", createDocumentsRouter(docStore));
+  app.use("/api/documents", createDocumentsRouter(docStore, { chunkStore }));
+  app.use(
+    "/api/chat",
+    createChatRouter({ chunkStore, docStore, embedQuestion: chat.embed, generate: chat.generate }),
+  );
   app.use(uploadErrorHandler);
 
   return app;
