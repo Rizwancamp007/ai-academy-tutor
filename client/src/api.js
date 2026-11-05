@@ -62,3 +62,7 @@ export async function deleteDocument(token, id) {
   if (!res.ok) throw new Error(data.message || "Request failed");
   return data;
 }
+
+export function askQuestion(token, question) {
+  return request("/api/chat", { question }, token);
+}
