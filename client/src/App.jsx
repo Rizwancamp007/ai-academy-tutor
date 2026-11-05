@@ -7,6 +7,7 @@ import {
   register,
   uploadDocument,
 } from "./api.js";
+import Chat from "./components/Chat.jsx";
 
 export default function App() {
   const [mode, setMode] = useState("login");
@@ -124,6 +125,8 @@ export default function App() {
         <button type="button" onClick={handleRefresh}>Refresh session</button>{" "}
         <button type="button" onClick={handleLogout}>Log out</button>
         <p>Ask questions about your academy&apos;s notes, and get answers with citations.</p>
+
+        <Chat user={user} />
 
         {user.role === "teacher" && (
           <section>
