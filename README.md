@@ -38,6 +38,12 @@ Register and log in with a teacher or student role. Passwords are hashed, and ev
 - `POST /api/auth/login` — email, password, returns a token and the user
 - `GET /api/auth/me` — needs an `Authorization: Bearer <token>` header
 
+## Teacher dashboard
+
+Teachers get a dashboard with their uploads, the document library, and stats: how many questions students asked, how many the notes could answer, and which documents the answers came from, plus recent questions about their notes.
+
+- `GET /api/stats` — teacher only, needs an `Authorization: Bearer <token>` header
+
 Run the tests from `server/`:
 
 ```bash

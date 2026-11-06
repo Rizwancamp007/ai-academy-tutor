@@ -4,8 +4,10 @@ import { createApp } from "./app.js";
 import { Document } from "./models/Document.js";
 import { User } from "./models/User.js";
 import { Chunk } from "./models/Chunk.js";
+import { QuestionEvent } from "./models/QuestionEvent.js";
 import { createMongooseChunkStore } from "./store/chunks.js";
 import { createMongooseDocumentStore } from "./store/documents.js";
+import { createMongooseStatsStore } from "./store/stats.js";
 import { createMemoryStore, createMongooseStore } from "./store/users.js";
 
 dotenv.config();
@@ -16,16 +18,18 @@ async function main() {
   let store = createMemoryStore();
   let docStore = undefined;
   let chunkStore = undefined;
+  let statsStore = undefined;
   if (process.env.MONGODB_URI) {
     await mongoose.connect(process.env.MONGODB_URI);
     store = createMongooseStore(User);
     docStore = createMongooseDocumentStore(Document);
     chunkStore = createMongooseChunkStore(Chunk);
+    statsStore = createMongooseStatsStore(QuestionEvent);
     console.log("Connected to MongoDB");
   } else {
     console.log("No MONGODB_URI set, using in-memory data (resets on restart)");
   }
-  const app = createApp({ store, docStore, chunkStore });
+  const app = createApp({ store, docStore, chunkStore, statsStore });
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });

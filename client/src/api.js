@@ -66,3 +66,12 @@ export async function deleteDocument(token, id) {
 export function askQuestion(token, question) {
   return request("/api/chat", { question }, token);
 }
+
+export async function fetchStats(token) {
+  const res = await fetch(`${API_URL}/api/stats`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || "Request failed");
+  return data;
+}
