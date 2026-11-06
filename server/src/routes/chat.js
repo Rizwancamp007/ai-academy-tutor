@@ -1,6 +1,6 @@
 import express from "express";
 import { requireAuth } from "../middleware/auth.js";
-import { generateAnswer } from "../services/answer.js";
+import { generateAnswer, NOT_IN_MATERIAL } from "../services/answer.js";
 import { embedText } from "../services/embed.js";
 import { formatCitation, rankChunks } from "../services/retrieve.js";
 
@@ -14,6 +14,7 @@ const RATE_MAX_REQUESTS = 30;
 export function createChatRouter({
   chunkStore,
   docStore,
+  statsStore,
   embedQuestion = embedText,
   generate = generateAnswer,
 } = {}) {
@@ -56,6 +57,24 @@ export function createChatRouter({
         index: source.index,
         citation: formatCitation(source),
       }));
+      // Feed the teacher dashboard: one row per answered question, noting
+      // which documents it came from. Recording must never break the
+      // answer itself, so a stats failure is logged and ignored.
+      if (statsStore) {
+        const answeredFromNotes = answer !== NOT_IN_MATERIAL;
+        try {
+          await statsStore.record({
+            question,
+            answeredFromNotes,
+            documentIds: answeredFromNotes
+              ? sources.map((source) => source.documentId)
+              : [],
+            askedBy: req.user.id,
+          });
+        } catch (err) {
+          console.error("Could not record question stats:", err.message);
+        }
+      }
       return res.json({ answer, citations });
     } catch (err) {
       if (err && /GEMINI_API_KEY is not set/.test(err.message)) {

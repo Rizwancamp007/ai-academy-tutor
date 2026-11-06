@@ -8,6 +8,8 @@ import {
   uploadDocument,
 } from "./api.js";
 import Chat from "./components/Chat.jsx";
+import Dashboard from "./components/Dashboard.jsx";
+import DocumentList from "./components/DocumentList.jsx";
 
 export default function App() {
   const [mode, setMode] = useState("login");
@@ -128,40 +130,23 @@ export default function App() {
 
         <Chat user={user} />
 
-        {user.role === "teacher" && (
-          <section>
-            <h2>Upload notes</h2>
-            <form onSubmit={handleUpload}>
-              <label>
-                PDF or Word file{" "}
-                <input name="file" type="file" accept=".pdf,.docx" required />
-              </label>{" "}
-              <button type="submit" disabled={uploading}>
-                {uploading ? "Uploading..." : "Upload"}
-              </button>
-            </form>
-          </section>
+        {user.role === "teacher" ? (
+          <Dashboard
+            documents={documents}
+            docsLoading={docsLoading}
+            docsError={docsError}
+            uploading={uploading}
+            onUpload={handleUpload}
+            onDelete={handleDelete}
+          />
+        ) : (
+          <DocumentList
+            documents={documents}
+            loading={docsLoading}
+            error={docsError}
+            canDelete={false}
+          />
         )}
-
-        <section>
-          <h2>Documents</h2>
-          {docsLoading && <p>Loading documents...</p>}
-          {docsError && <p role="alert">{docsError}</p>}
-          {!docsLoading && documents.length === 0 && <p>No documents yet.</p>}
-          <ul>
-            {documents.map((doc) => (
-              <li key={doc.id}>
-                {doc.title} — {doc.status}
-                {doc.status === "failed" && " (could not be read, try another file)"}{" "}
-                {user.role === "teacher" && (
-                  <button type="button" onClick={() => handleDelete(doc.id)}>
-                    Delete
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
       </main>
     );
   }

@@ -112,6 +112,31 @@ button:disabled {
   text-decoration: underline;
 }
 
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.stat {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stat strong {
+  font-size: 1.5rem;
+}
+
+.stat span {
+  color: #555;
+  font-size: 0.85rem;
+}
+
 @media (max-width: 600px) {
   body {
     padding: 1rem;
@@ -124,5 +149,9 @@ button:disabled {
   .chat-messages {
     max-height: 55vh;
     padding: 0.75rem;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
