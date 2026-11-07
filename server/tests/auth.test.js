@@ -14,9 +14,13 @@ let store;
 
 test.before(async () => {
   store = createMemoryStore();
-  const app = createApp({ store });
-  app.get("/teacher-only", requireAuth, requireRole("teacher"), (req, res) => {
-    res.json({ ok: true, role: req.user.role });
+  const app = createApp({
+    store,
+    mount: (a) => {
+      a.get("/teacher-only", requireAuth, requireRole("teacher"), (req, res) => {
+        res.json({ ok: true, role: req.user.role });
+      });
+    },
   });
   await new Promise((resolve) => {
     server = app.listen(0, () => {

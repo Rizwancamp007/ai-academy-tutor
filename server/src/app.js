@@ -15,6 +15,8 @@ export function createApp({
   chunkStore = createMemoryChunkStore(),
   statsStore = createMemoryStatsStore(),
   chat = {},
+  // Lets tests mount extra routes before the 404 fallback below.
+  mount,
 } = {}) {
   const app = express();
   app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" }));
@@ -42,6 +44,24 @@ export function createApp({
   );
   app.use("/api/stats", createStatsRouter({ statsStore, docStore, chunkStore }));
   app.use(uploadErrorHandler);
+  if (typeof mount === "function") mount(app);
+
+  // Unknown paths still answer JSON, so the client never gets an HTML
+  // error page it can't show.
+  app.use((req, res) => {
+    res.status(404).json({ message: "Not found" });
+  });
+  app.use(errorHandler);
 
   return app;
+}
+
+// Anything unexpected still answers JSON, never a bare error page or a
+// stack trace — the client only ever shows the message.
+export function errorHandler(err, req, res, next) {
+  if (err && err.type === "entity.parse.failed") {
+    return res.status(400).json({ message: "Request was not valid JSON" });
+  }
+  console.error(err);
+  return res.status(500).json({ message: "Something went wrong — please try again" });
 }

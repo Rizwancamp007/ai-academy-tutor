@@ -15,6 +15,7 @@ export default function Chat({ user }) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [failedQuestion, setFailedQuestion] = useState("");
   const listRef = useRef(null);
 
   useEffect(() => {
@@ -30,17 +31,14 @@ export default function Chat({ user }) {
     if (list) list.scrollTop = list.scrollHeight;
   }, [messages, sending]);
 
-  async function handleSend(e) {
-    e.preventDefault();
-    const question = input.trim();
-    if (!question || sending) return;
+  async function sendQuestion(question) {
     const token = localStorage.getItem("tutor-token");
     if (!token) {
       setError("Your session expired — log in again and retry.");
       return;
     }
     setError("");
-    setInput("");
+    setFailedQuestion("");
     setSending(true);
     const userMessage = { id: Date.now(), role: "user", text: question };
     setMessages((prev) => [...prev, userMessage]);
@@ -56,15 +54,31 @@ export default function Chat({ user }) {
         },
       ]);
     } catch (err) {
+      // The question stays on screen; retry sends it again as-is.
       setError(err.message);
+      setFailedQuestion(question);
     } finally {
       setSending(false);
     }
   }
 
+  async function handleSend(e) {
+    e.preventDefault();
+    const question = input.trim();
+    if (!question || sending) return;
+    setInput("");
+    await sendQuestion(question);
+  }
+
+  function handleRetry() {
+    if (!failedQuestion || sending) return;
+    sendQuestion(failedQuestion);
+  }
+
   function handleClear() {
     setMessages([]);
     setError("");
+    setFailedQuestion("");
     try {
       localStorage.removeItem(`tutor-chat-${user.id}`);
     } catch {
@@ -99,12 +113,25 @@ export default function Chat({ user }) {
           </div>
         ))}
         {sending && (
-          <div className="chat-message chat-message-assistant">
-            <p>Thinking…</p>
+          <div className="chat-message chat-message-assistant" aria-label="Waiting for an answer">
+            <p className="chat-typing" aria-hidden="true">
+              <span>.</span>
+              <span>.</span>
+              <span>.</span>
+            </p>
           </div>
         )}
       </div>
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <p role="alert" className="error">
+          {error}{" "}
+          {failedQuestion && (
+            <button type="button" className="link-button" onClick={handleRetry} disabled={sending}>
+              Try again
+            </button>
+          )}
+        </p>
+      )}
       <form className="chat-form" onSubmit={handleSend}>
         <label className="chat-input-label">
           Your question

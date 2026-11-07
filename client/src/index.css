@@ -19,6 +19,33 @@ button:disabled {
   opacity: 0.6;
 }
 
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid #1a1a1a;
+  outline-offset: 2px;
+}
+
+.error {
+  color: #b3261e;
+}
+
+.notice {
+  background: #fff4e5;
+  border: 1px solid #e6b800;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  text-decoration: underline;
+  font: inherit;
+}
+
 .chat {
   margin: 1.5rem 0;
 }
@@ -75,6 +102,36 @@ button:disabled {
 .chat-sources ul {
   margin: 0;
   padding-left: 1.1rem;
+}
+
+.chat-typing {
+  display: inline-flex;
+  gap: 0.2rem;
+}
+
+.chat-typing span {
+  animation: chat-typing-bounce 1.2s infinite;
+}
+
+.chat-typing span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.chat-typing span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes chat-typing-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-0.25rem);
+    opacity: 1;
+  }
 }
 
 .chat-form {
@@ -153,5 +210,25 @@ button:disabled {
 
   .stats {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 400px) {
+  .chat-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .chat-form button {
+    width: 100%;
+    min-height: 2.75rem;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  button {
+    min-height: 2.75rem;
   }
 }
