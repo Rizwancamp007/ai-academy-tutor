@@ -30,6 +30,8 @@ export default function App() {
   const [docsLoading, setDocsLoading] = useState(false);
   const [docsError, setDocsError] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [notice, setNotice] = useState("");
 
   const loadDocuments = useCallback(async () => {
     const token = localStorage.getItem("tutor-token");
@@ -86,6 +88,7 @@ export default function App() {
       localStorage.setItem("tutor-user", JSON.stringify(me));
     } catch {
       handleLogout();
+      setNotice("Your session expired — please log in again.");
     }
   }
 
@@ -93,6 +96,17 @@ export default function App() {
     e.preventDefault();
     const file = e.target.elements.file.files[0];
     if (!file) return;
+    // Check before sending so a wrong file never waits on the server to
+    // be told no — same limits as the server (PDF/DOCX, 10 MB).
+    const name = file.name.toLowerCase();
+    if (!name.endsWith(".pdf") && !name.endsWith(".docx")) {
+      setDocsError("Only PDF and Word (.docx) files are accepted");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setDocsError("File is too large (max 10 MB)");
+      return;
+    }
     const token = localStorage.getItem("tutor-token");
     setUploading(true);
     setDocsError("");
@@ -109,11 +123,14 @@ export default function App() {
 
   async function handleDelete(id) {
     const token = localStorage.getItem("tutor-token");
+    setDeletingId(id);
     try {
       await deleteDocument(token, id);
       await loadDocuments();
     } catch (err) {
       setDocsError(err.message);
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -138,6 +155,7 @@ export default function App() {
             uploading={uploading}
             onUpload={handleUpload}
             onDelete={handleDelete}
+            deletingId={deletingId}
           />
         ) : (
           <DocumentList
@@ -155,6 +173,7 @@ export default function App() {
     <main>
       <h1>AI Academy Tutor</h1>
       <p>Ask questions about your academy&apos;s notes, and get answers with citations.</p>
+      {notice && <p role="status" className="notice">{notice}</p>}
       <div>
         <button type="button" onClick={() => setMode("login")}>Log in</button>{" "}
         <button type="button" onClick={() => setMode("register")}>Register</button>
@@ -196,7 +215,7 @@ export default function App() {
             </label>
           </div>
         )}
-        {error && <p role="alert">{error}</p>}
+        {error && <p role="alert" className="error">{error}</p>}
         <button type="submit" disabled={loading}>
           {loading ? "Please wait..." : mode === "login" ? "Log in" : "Register"}
         </button>

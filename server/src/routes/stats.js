@@ -1,5 +1,6 @@
 import express from "express";
 import { requireAuth, requireRole } from "../middleware/auth.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
 
 // Teacher dashboard numbers. Totals are academy-wide (one academy shares
 // one tutor); the per-document rows and recent questions are scoped to the
@@ -9,7 +10,7 @@ export function createStatsRouter({ statsStore, docStore, chunkStore } = {}) {
   if (!docStore) throw new Error("A document store is required");
   const router = express.Router();
 
-  router.get("/", requireAuth, requireRole("teacher"), async (req, res) => {
+  router.get("/", requireAuth, requireRole("teacher"), asyncHandler(async (req, res) => {
     const summary = await statsStore.summary();
     const recent = await statsStore.recent(10);
     const documents = await docStore.listForUser(req.user);
@@ -47,7 +48,7 @@ export function createStatsRouter({ statsStore, docStore, chunkStore } = {}) {
           createdAt: event.createdAt,
         })),
     });
-  });
+  }));
 
   return router;
 }

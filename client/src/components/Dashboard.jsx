@@ -9,22 +9,27 @@ export default function Dashboard({
   uploading,
   onUpload,
   onDelete,
+  deletingId,
 }) {
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState("");
 
-  useEffect(() => {
+  function loadStats() {
     const token = localStorage.getItem("tutor-token");
     if (!token) {
       setStatsLoading(false);
       return;
     }
+    setStatsLoading(true);
+    setStatsError("");
     fetchStats(token)
       .then(setStats)
       .catch((err) => setStatsError(err.message))
       .finally(() => setStatsLoading(false));
-  }, []);
+  }
+
+  useEffect(loadStats, []);
 
   const statsById = new Map((stats?.documents || []).map((doc) => [doc.id, doc]));
   const docsWithStats = documents.map((doc) => {
@@ -36,7 +41,14 @@ export default function Dashboard({
     <section aria-label="Teacher dashboard">
       <h2>Teacher dashboard</h2>
       {statsLoading && <p>Loading stats...</p>}
-      {statsError && <p role="alert">{statsError}</p>}
+      {statsError && (
+        <p role="alert" className="error">
+          {statsError}{" "}
+          <button type="button" className="link-button" onClick={loadStats}>
+            Try again
+          </button>
+        </p>
+      )}
       {stats && (
         <div className="stats">
           <div className="stat">
@@ -88,6 +100,7 @@ export default function Dashboard({
         error={docsError}
         canDelete
         onDelete={onDelete}
+        deletingId={deletingId}
       />
     </section>
   );

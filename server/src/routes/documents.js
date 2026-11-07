@@ -1,6 +1,7 @@
 import express from "express";
 import multer from "multer";
 import { requireAuth, requireRole } from "../middleware/auth.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
 import { extractText, isSupportedFile, maxUploadBytes } from "../services/extract.js";
 import { processDocument } from "../services/indexing.js";
 import { publicDocument } from "../store/documents.js";
@@ -19,7 +20,7 @@ export function createDocumentsRouter(docStore, { chunkStore, indexDocument = pr
     requireAuth,
     requireRole("teacher"),
     upload.single("file"),
-    async (req, res) => {
+    asyncHandler(async (req, res) => {
       const file = req.file;
       if (!file) {
         return res.status(400).json({ message: "Choose a PDF or Word file to upload" });
@@ -55,15 +56,15 @@ export function createDocumentsRouter(docStore, { chunkStore, indexDocument = pr
         });
       }
       return res.status(201).json({ document: publicDocument(doc) });
-    },
+    }),
   );
 
-  router.get("/", requireAuth, async (req, res) => {
+  router.get("/", requireAuth, asyncHandler(async (req, res) => {
     const documents = await docStore.listForUser(req.user);
     return res.json({ documents: documents.map(publicDocument) });
-  });
+  }));
 
-  router.get("/:id", requireAuth, async (req, res) => {
+  router.get("/:id", requireAuth, asyncHandler(async (req, res) => {
     const doc = await docStore.findById(req.params.id);
     if (!doc) {
       return res.status(404).json({ message: "Document not found" });
@@ -72,9 +73,9 @@ export function createDocumentsRouter(docStore, { chunkStore, indexDocument = pr
       return res.status(403).json({ message: "Not allowed for this role" });
     }
     return res.json({ document: publicDocument(doc) });
-  });
+  }));
 
-  router.delete("/:id", requireAuth, requireRole("teacher"), async (req, res) => {
+  router.delete("/:id", requireAuth, requireRole("teacher"), asyncHandler(async (req, res) => {
     const doc = await docStore.findById(req.params.id);
     if (!doc) {
       return res.status(404).json({ message: "Document not found" });
@@ -87,20 +88,22 @@ export function createDocumentsRouter(docStore, { chunkStore, indexDocument = pr
       await chunkStore.removeForDocument(req.params.id);
     }
     return res.json({ message: "Document deleted" });
-  });
+  }));
 
   return router;
 }
 
 // Multer reports an oversized file as its own error, before our handler
 // runs — turn it into a plain message instead of a server error page.
+// Anything that isn't a multer error is passed on to the global handler,
+// so a real server problem never shows up as "Upload failed".
 // eslint-disable-next-line no-unused-vars
 export function uploadErrorHandler(err, req, res, next) {
   if (err && err.code === "LIMIT_FILE_SIZE") {
     return res.status(400).json({ message: "File is too large (max 10 MB)" });
   }
-  if (err) {
+  if (err && err instanceof multer.MulterError) {
     return res.status(400).json({ message: "Upload failed" });
   }
-  return next();
+  return next(err);
 }
