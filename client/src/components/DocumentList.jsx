@@ -1,6 +1,6 @@
 export default function DocumentList({ documents, loading, error, canDelete, onDelete, deletingId }) {
   return (
-    <section>
+    <section className="panel documents">
       <h2>Documents</h2>
       {loading && <p>Loading documents...</p>}
       {error && <p role="alert" className="error">{error}</p>}

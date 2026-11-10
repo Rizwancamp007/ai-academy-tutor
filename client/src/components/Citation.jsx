@@ -1,3 +1,3 @@
 export default function Citation({ citation }) {
-  return <li>{citation.citation}</li>;
+  return <li className="citation-chip">{citation.citation}</li>;
 }
