@@ -87,7 +87,7 @@ export default function Chat({ user }) {
   }
 
   return (
-    <section className="chat" aria-label="Chat with your notes">
+    <section className="panel chat" aria-label="Chat with your notes">
       <h2>Ask your notes</h2>
       <div className="chat-messages" ref={listRef}>
         {messages.length === 0 && !sending && (

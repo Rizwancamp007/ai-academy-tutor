@@ -137,48 +137,59 @@ export default function App() {
   if (user) {
     return (
       <main>
-        <h1>AI Academy Tutor</h1>
-        <p>
-          Signed in as {user.name} ({user.role}).
-        </p>
-        <button type="button" onClick={handleRefresh}>Refresh session</button>{" "}
-        <button type="button" onClick={handleLogout}>Log out</button>
-        <p>Ask questions about your academy&apos;s notes, and get answers with citations.</p>
+        <header className="app-header">
+          <div className="brand">
+            <h1>AI Academy Tutor</h1>
+            <p className="tagline">Ask questions about your academy&apos;s notes, and get answers with citations.</p>
+          </div>
+          <div className="session">
+            <p>
+              Signed in as {user.name} ({user.role}).
+            </p>
+            <div className="session-actions">
+              <button type="button" onClick={handleRefresh}>Refresh session</button>{" "}
+              <button type="button" onClick={handleLogout}>Log out</button>
+            </div>
+          </div>
+        </header>
 
-        <Chat user={user} />
+        <div className="layout">
+          <Chat user={user} />
 
-        {user.role === "teacher" ? (
-          <Dashboard
-            documents={documents}
-            docsLoading={docsLoading}
-            docsError={docsError}
-            uploading={uploading}
-            onUpload={handleUpload}
-            onDelete={handleDelete}
-            deletingId={deletingId}
-          />
-        ) : (
-          <DocumentList
-            documents={documents}
-            loading={docsLoading}
-            error={docsError}
-            canDelete={false}
-          />
-        )}
+          {user.role === "teacher" ? (
+            <Dashboard
+              documents={documents}
+              docsLoading={docsLoading}
+              docsError={docsError}
+              uploading={uploading}
+              onUpload={handleUpload}
+              onDelete={handleDelete}
+              deletingId={deletingId}
+            />
+          ) : (
+            <DocumentList
+              documents={documents}
+              loading={docsLoading}
+              error={docsError}
+              canDelete={false}
+            />
+          )}
+        </div>
       </main>
     );
   }
 
   return (
     <main>
-      <h1>AI Academy Tutor</h1>
-      <p>Ask questions about your academy&apos;s notes, and get answers with citations.</p>
-      {notice && <p role="status" className="notice">{notice}</p>}
-      <div>
-        <button type="button" onClick={() => setMode("login")}>Log in</button>{" "}
-        <button type="button" onClick={() => setMode("register")}>Register</button>
-      </div>
-      <form onSubmit={handleSubmit}>
+      <div className="auth-card">
+        <h1>AI Academy Tutor</h1>
+        <p>Ask questions about your academy&apos;s notes, and get answers with citations.</p>
+        {notice && <p role="status" className="notice">{notice}</p>}
+        <div className="auth-toggle">
+          <button type="button" onClick={() => setMode("login")}>Log in</button>{" "}
+          <button type="button" onClick={() => setMode("register")}>Register</button>
+        </div>
+        <form className="auth-form" onSubmit={handleSubmit}>
         {mode === "register" && (
           <div>
             <label>
@@ -219,7 +230,8 @@ export default function App() {
         <button type="submit" disabled={loading}>
           {loading ? "Please wait..." : mode === "login" ? "Log in" : "Register"}
         </button>
-      </form>
+        </form>
+      </div>
     </main>
   );
 }

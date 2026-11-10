@@ -38,7 +38,7 @@ export default function Dashboard({
   });
 
   return (
-    <section aria-label="Teacher dashboard">
+    <section className="panel dashboard" aria-label="Teacher dashboard">
       <h2>Teacher dashboard</h2>
       {statsLoading && <p>Loading stats...</p>}
       {statsError && (
